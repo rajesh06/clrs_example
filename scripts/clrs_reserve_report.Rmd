@@ -1,0 +1,134 @@
+---
+title: "CLRS 2016 Reserve Example"
+author: "SFR Actuarial Consulting, Inc."
+date: "May 15, 2016"
+output: 
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+```{r echo=FALSE}
+library(dplyr)
+library(magrittr)
+library(lubridate)
+library(htmlTable)
+library(knitr)
+library(xtable)
+```
+
+```{r cache=TRUE, echo=FALSE}
+auto_dat_cas <- 'http://www.casact.org/research/reserve_data/ppauto_pos.csv'
+auto_dat <- read.csv(file = auto_dat_cas) %>% 
+  tbl_df()
+```
+
+```{r echo=FALSE}
+names(auto_dat)[names(auto_dat) == 'AccidentYear'] <- 'acc_yr'
+names(auto_dat)[names(auto_dat) == 'DevelopmentYear'] <- 'dev_yr'
+names(auto_dat)[names(auto_dat) == 'DevelopmentLag'] <- 'lag'
+names(auto_dat)[names(auto_dat) == 'IncurLoss_B'] <- 'incur_loss'
+names(auto_dat)[names(auto_dat) == 'CumPaidLoss_B'] <- 'paid_loss'
+names(auto_dat)[names(auto_dat) == 'BulkLoss_B'] <- 'bulk_loss'
+names(auto_dat)[names(auto_dat) == 'EarnedPremDIR_B'] <- 'dir_prem'
+names(auto_dat)[names(auto_dat) == 'EarnedPremCeded_B'] <- 'ceded_prem'
+names(auto_dat)[names(auto_dat) == 'EarnedPremNet_B'] <- 'net_prem'
+names(auto_dat)[names(auto_dat) == 'PostedReserve97_B'] <- 'posted_reserve'
+names(auto_dat) <- tolower(names(auto_dat))
+
+model_dat <- auto_dat %>% 
+  dplyr::filter(grname == 'State Farm Mut Grp')
+
+proj_info <- list(
+  clms = "claims and claim expenses",
+  client = "CLRS Insurance Company",
+  clnt = "CLRS IC", 
+  val_date = as.Date('1997-12-31'),
+  acct_date = as.Date('1997-12-31'),
+  info_date = as.Date('1997-12-31')
+  )
+
+```
+
+
+
+## Executive Summary
+
+SFR consulting was retained by the CLRS 2016 R Workshop participants to prepare this analysis of unpaid claims and claims expenses. In this document, we present a analysis of unpaid claims and claim expenses. We developed this analysis using `R` and used R Markdown to create this document.
+
+The relevant dates for our analysis are as follows:
+* Accounting date: 
+* Valuation date:
+* Information date
+
+The scope of our analysis is to estimate the unpaid claims and claims expenses for the automobile liability coverage for `r proj_info$client`.
+
+### Findings
+
+### Acknowledgement
+
+Any questions related to this report should be directed to:
+
+Rajesh Sahasrabuddhe, FCAS, MAAA  
+(215) 246-1028  
+<rajesh_saharabuddhe@oliverwyman.com>
+
+Brian A. Fannin, ACAS  
+<BFannin@RedwoodsGroup.com>  
+
+Emma Ran Li  
+(814) 753-0321  
+<ril5077@gmail.com>
+
+
+## Data
+
+The data underlying this analysis was provided by the Casualty Actuarial Society (CAS) which was available at the <`r auto_dat_cas`> on `r format(Sys.time(), "%A, %b %d, %Y at %X")`.
+
+We sumamrize that data in the table below:
+
+```{r echo=FALSE}
+model_dat %<>% 
+  dplyr::filter(dev_yr == year(proj_info$val_date)) %>% 
+  dplyr::select(acc_yr, dir_prem, incur_loss, paid_loss) %>% 
+  dplyr::mutate(case_loss = incur_loss - paid_loss) %>% 
+  dplyr::mutate(acc_yr = as.character(acc_yr))
+
+model_dat %<>% 
+    bind_rows(
+    data_frame(acc_yr = "Total", 
+      dir_prem = sum(model_dat$dir_prem),
+      incur_loss = sum(model_dat$incur_loss),
+      paid_loss = sum(model_dat$paid_loss),
+      case_loss = sum(model_dat$case_loss))) %>% 
+  as.data.frame()
+
+model_dat[,2:5] <- lapply(X = model_dat[,2:5], function(x) {
+  prettyNum(x, big.mark = ",")})
+
+htmlTable::htmlTable(model_dat, 
+  caption = paste("Data Summary\nas of", proj_info$val_date),
+  rnames = FALSE, 
+  header = c("Year", "Premium", "Incurred", "Paid", "Case"),
+  css.total = "border-top: 1px solid #BEBEBE; font-weight: 900; 
+  border-bottom: 1px solid #BEBEBE",
+  css.cell = "padding-left: 15px",
+  align = c("c", "r", "r", "r", "r"), 
+  ctable = FALSE,
+  total = TRUE)
+
+
+
+
+
+
+```
+
+
