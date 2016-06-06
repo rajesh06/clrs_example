@@ -2,3 +2,11 @@
 .Rhistory
 .RData
 .Ruserdata
+
+*.RData
+
+*.rdb
+
+*.rdx
+
+*.png

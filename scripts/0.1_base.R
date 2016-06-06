@@ -6,8 +6,8 @@
 
 ##  
 ## Rajesh Sahasrabuddhe (rajesh.sahasrabuddhe@oliverwyman.com)
-## Brian Fannin BFannin@redwoodsgroup.com
-## Ran Li <ril5077@gmail.com>
+## Brian Fannin (BFannin@redwoodsgroup.com)
+## Ran Li (ril5077@gmail.com)
 
 
 
@@ -21,12 +21,12 @@ library(dplyr)
 library(actuar)
 library(ChainLadder)
 library(tidyr)
-library(devtools)
+#library(devtools)
 library(lubridate)
 library(testthat)
-library(data.table)
-library(gridExtra)
-library(mixtools)
+#library(data.table)
+#library(gridExtra)
+#library(mixtools)
 
 # Function definitions
 # -----------------------------------------------------------------------------
@@ -61,9 +61,10 @@ summary_dat <- auto_dat %>%
   dplyr::group_by(grname) %>% 
   dplyr::summarise(mean_loss = mean(incur_loss)) 
 
-barplot(height = summary_dat$mean_loss, horiz = TRUE)
+#barplot(height = summary_dat$mean_loss, horiz = TRUE)
 
 summary_dat$grname[which(summary_dat$mean_loss > 200000)]
 
 model_dat <- auto_dat %>% 
-  dplyr::filter(grname == 'State Farm Mut Grp')
+  dplyr::filter(grname == 'State Farm Mut Grp') %>%
+  droplevels()

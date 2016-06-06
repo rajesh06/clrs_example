@@ -1,0 +1,68 @@
+---
+title: "CLRS 2016 Example"
+author: SFR Consulting
+date: "June 5, 2016"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    theme: cerulean
+---
+
+```{r cache=TRUE, echo=FALSE, warning=FALSE, fi}
+setwd('/Users/RajeshSahasrabuddhe/Documents/clrs_example')
+source(file = './scripts/0.1_base.R')
+rpt_time <- Sys.time()
+source(file = './scripts/1.0_summarise_data.R')
+library(ChainLadder)
+```
+
+## Executive Summary  
+### Purpose and Scope  
+SFR Consulting was retained by the CLRS Insurance Company (CIC) to provide a review of the automobile liability reserves of ``r clrs$company_name``. Our estimate of unpaid claims and claims expenses as of ``r clrs$val_date`` is based on data as of ``r clrs$val_date``. 
+
+This report was prepared to support the potential acquisition of `r clrs$company_name` by CIC. The estimates presented are not appropriate for any other use.
+
+### Findings  
+Findings Here  
+### Comments  
+Comments Here  
+### Responsible Actuaries  
+Rajesh and Brian are members of the Casualty Actuarial Society. This presentation was created strictly for instructional purposes and should not be relied upon in any way, shape or form. If you use it for anything - that is entirely on you.  
+
+Emma will soon be a member and she will need to include disclaimers like these.  
+
+If you have any questions, please call any one us between the hours of 13:10 and 13:20 Pitcairn Standard Time.   
+
+## Data  
+We downloaded the data from the website of the Casualty Actuarial Society  
+* URL: <`r auto_dat_cas`>  
+* Download time: `r rpt_time`  
+* The data included the following information fields  
+```{r}
+names(model_dat)
+```
+
+### Data Summary
+We present a summary of the data below.  
+```{r}
+print(x = clrs$data_df, digits = 0)
+```
+
+### Data Triangles  
+We constructed incurred and paid claim and claim expense triangles from this data. We present those triangle below:
+```{r}
+clrs$paid_tri
+clrs$incur_tri
+```
+
+### Actuarial Analysis  
+### Overview
+We used loss development and Bornhuetter-Ferguson (BF) methods to calculate the unpaid claims and claim expenses.
+
+### Development Patterns
+```{r}
+ata(clrs$paid_tri)
+```
+
