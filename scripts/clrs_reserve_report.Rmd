@@ -80,7 +80,7 @@ We used several R packages to prepare this analysis.
 # load packages
 
 my_packages <- list("dplyr", "magrittr", "lubridate", "htmlTable", "knitr", 
-  "xtable", "ChainLadder")
+  "xtable", "ChainLadder", "scales")
 sapply(X = my_packages, FUN = library, character.only = TRUE)
 ```
 
@@ -147,6 +147,31 @@ htmlTable::htmlTable(summary_df,
 We present incurred loss development experience in the triangle below:
 
 ```{r echo=FALSE}
+
+my_triangles = list(
+  paid = 
+    as.triangle(Triangle = dplyr::filter(model_dat, dev_yr <= 1997),
+      origin = "acc_yr", dev = "lag", value = "paid_loss"),
+  incurred = 
+    as.triangle(Triangle = dplyr::filter(model_dat, dev_yr <= 1997),
+      origin = "acc_yr", dev = "lag", value = "incur_loss")
+)
+
+y_at <- 2000000 * 1:5
+
+plot(my_triangles$paid, lattice = TRUE, main = "Paid Loss Development",
+  xlab = "Matrurity (Years)", 
+  scales = list(
+    y = list(at = y_at,
+      labels = comma(y_at))
+    ))
+
+plot(my_triangles$incurred, lattice = TRUE, main = "Incurred Loss Development",
+  xlab = "Matrurity (Years)",
+  scales = list(
+    y = list(at = y_at,
+      labels = comma(y_at))
+    ))
 
 ```
 
