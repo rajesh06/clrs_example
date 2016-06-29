@@ -1,50 +1,16 @@
 ---
 title: "CLRS 2016 Reserve Example"
 author: "SFR Actuarial Consulting, Inc."
-date: "May 15, 2016"
-output: 
-  html_document:
-    toc: true
-    toc_float:
-      collapsed: false
-      smooth_scroll: false
+date: "`r Sys.Date()`"
+output:
+  rmdformats::readthedown:
+    highlight: kate
 ---
 
 ```{r setup, include=FALSE}
+# Sets global chunck options
+
 knitr::opts_chunk$set(echo = TRUE)
-
-```
-
-```{r echo=FALSE}
-library(dplyr)
-library(magrittr)
-library(lubridate)
-library(htmlTable)
-library(knitr)
-library(xtable)
-```
-
-```{r cache=TRUE, echo=FALSE}
-auto_dat_cas <- 'http://www.casact.org/research/reserve_data/ppauto_pos.csv'
-auto_dat <- read.csv(file = auto_dat_cas) %>% 
-  tbl_df()
-```
-
-```{r echo=FALSE}
-names(auto_dat)[names(auto_dat) == 'AccidentYear'] <- 'acc_yr'
-names(auto_dat)[names(auto_dat) == 'DevelopmentYear'] <- 'dev_yr'
-names(auto_dat)[names(auto_dat) == 'DevelopmentLag'] <- 'lag'
-names(auto_dat)[names(auto_dat) == 'IncurLoss_B'] <- 'incur_loss'
-names(auto_dat)[names(auto_dat) == 'CumPaidLoss_B'] <- 'paid_loss'
-names(auto_dat)[names(auto_dat) == 'BulkLoss_B'] <- 'bulk_loss'
-names(auto_dat)[names(auto_dat) == 'EarnedPremDIR_B'] <- 'dir_prem'
-names(auto_dat)[names(auto_dat) == 'EarnedPremCeded_B'] <- 'ceded_prem'
-names(auto_dat)[names(auto_dat) == 'EarnedPremNet_B'] <- 'net_prem'
-names(auto_dat)[names(auto_dat) == 'PostedReserve97_B'] <- 'posted_reserve'
-names(auto_dat) <- tolower(names(auto_dat))
-
-model_dat <- auto_dat %>% 
-  dplyr::filter(grname == 'State Farm Mut Grp')
 
 proj_info <- list(
   clms = "claims and claim expenses",
@@ -53,20 +19,39 @@ proj_info <- list(
   val_date = as.Date('1997-12-31'),
   acct_date = as.Date('1997-12-31'),
   info_date = as.Date('1997-12-31')
-  )
+)
+
+auto_dat_cas <- 'http://www.casact.org/research/reserve_data/ppauto_pos.csv'
+
+total_row <- function(df, sum_totals, total_label = NULL){
+  
+  # df <- summary_df
+  # sum_totals <- 2:5
+  # total_label <- 1
+  totals <- sapply(X = df[,sum_totals], FUN = sum)
+  df <- rbind(df, NA)
+  
+  if(!is.null(total_label)) {
+    df[nrow(df), total_label] <- "Total"}
+  
+  df[nrow(df), sum_totals] <- lapply(df[-nrow(df), sum_totals], sum)
+  
+  return(df)
+}
+
+
 
 ```
-
-
 
 ## Executive Summary
 
 SFR consulting was retained by the CLRS 2016 R Workshop participants to prepare this analysis of unpaid claims and claims expenses. In this document, we present a analysis of unpaid claims and claim expenses. We developed this analysis using `R` and used R Markdown to create this document.
 
-The relevant dates for our analysis are as follows:
-* Accounting date: 
-* Valuation date:
-* Information date
+The relevant dates for our analysis are as follows:  
+
+* Accounting date: `r proj_info$acct_date`  
+* Valuation date: `r proj_info$val_date`  
+* Information date: `r proj_info$info_date`   
 
 The scope of our analysis is to estimate the unpaid claims and claims expenses for the automobile liability coverage for `r proj_info$client`.
 
@@ -88,32 +73,62 @@ Emma Ran Li
 <ril5077@gmail.com>
 
 
+## Setting up the R Environment
+
+We used several R packages to prepare this analysis. 
+```{r message = FALSE, warning=FALSE, results='hide'}
+# load packages
+
+my_packages <- list("dplyr", "magrittr", "lubridate", "htmlTable", "knitr", 
+  "xtable", "ChainLadder")
+sapply(X = my_packages, FUN = library, character.only = TRUE)
+```
+
 ## Data
 
-The data underlying this analysis was provided by the Casualty Actuarial Society (CAS) which was available at the <`r auto_dat_cas`> on `r format(Sys.time(), "%A, %b %d, %Y at %X")`.
+The data underlying this analysis was provided by the Casualty Actuarial Society (CAS) which was available at <`r auto_dat_cas`>. We downloaded the data on `r format(Sys.time(), "%A, %b %d, %Y at %X")`.
+
+
+```{r cache=TRUE, echo=FALSE}
+
+auto_dat <- read.csv(file = auto_dat_cas) %>% 
+  tbl_df()
+
+# Standardize names
+
+names(auto_dat)[names(auto_dat) == 'AccidentYear'] <- 'acc_yr'
+names(auto_dat)[names(auto_dat) == 'DevelopmentYear'] <- 'dev_yr'
+names(auto_dat)[names(auto_dat) == 'DevelopmentLag'] <- 'lag'
+names(auto_dat)[names(auto_dat) == 'IncurLoss_B'] <- 'incur_loss'
+names(auto_dat)[names(auto_dat) == 'CumPaidLoss_B'] <- 'paid_loss'
+names(auto_dat)[names(auto_dat) == 'BulkLoss_B'] <- 'bulk_loss'
+names(auto_dat)[names(auto_dat) == 'EarnedPremDIR_B'] <- 'dir_prem'
+names(auto_dat)[names(auto_dat) == 'EarnedPremCeded_B'] <- 'ceded_prem'
+names(auto_dat)[names(auto_dat) == 'EarnedPremNet_B'] <- 'net_prem'
+names(auto_dat)[names(auto_dat) == 'PostedReserve97_B'] <- 'posted_reserve'
+names(auto_dat) <- tolower(names(auto_dat))
+
+model_dat <- auto_dat %>% 
+  dplyr::filter(grname == 'State Farm Mut Grp')
+
+
+```
+
+
 
 We sumamrize that data in the table below:
 
 ```{r echo=FALSE}
-model_dat %<>% 
+summary_df <- model_dat %>% 
   dplyr::filter(dev_yr == year(proj_info$val_date)) %>% 
   dplyr::select(acc_yr, dir_prem, incur_loss, paid_loss) %>% 
-  dplyr::mutate(case_loss = incur_loss - paid_loss) %>% 
-  dplyr::mutate(acc_yr = as.character(acc_yr))
+  dplyr::mutate(case_loss = incur_loss - paid_loss)
 
-model_dat %<>% 
-    bind_rows(
-    data_frame(acc_yr = "Total", 
-      dir_prem = sum(model_dat$dir_prem),
-      incur_loss = sum(model_dat$incur_loss),
-      paid_loss = sum(model_dat$paid_loss),
-      case_loss = sum(model_dat$case_loss))) %>% 
-  as.data.frame()
+summary_df <- total_row(summary_df, sum_totals =  2:5, total_label = 1)
 
-model_dat[,2:5] <- lapply(X = model_dat[,2:5], function(x) {
-  prettyNum(x, big.mark = ",")})
+summary_df[,2:5] <- lapply(summary_df[,2:5], txtInt)
 
-htmlTable::htmlTable(model_dat, 
+htmlTable::htmlTable(summary_df, 
   caption = paste("Data Summary\nas of", proj_info$val_date),
   rnames = FALSE, 
   header = c("Year", "Premium", "Incurred", "Paid", "Case"),
@@ -125,10 +140,13 @@ htmlTable::htmlTable(model_dat,
   total = TRUE)
 
 
-
-
-
-
 ```
 
+
+## Loss Development
+We present incurred loss development experience in the triangle below:
+
+```{r echo=FALSE}
+
+```
 
