@@ -145,7 +145,12 @@ htmlTable::htmlTable(summary_df,
 
 ## Loss Development
 ### Paid Loss Development
-We present incurred loss development experience in the triangle below:
+We present incurred loss development experience in the triangle below.  
+
+In our review of the development experience, we noted the follwing:  
+
+- Development patterns have been generally lengthening particulalry at intermediate maturities such as 2:3 and 3:4  
+
 
 ```{r echo=FALSE}
 
