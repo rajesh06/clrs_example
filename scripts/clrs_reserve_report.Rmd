@@ -144,6 +144,7 @@ htmlTable::htmlTable(summary_df,
 
 
 ## Loss Development
+### Paid Loss Development
 We present incurred loss development experience in the triangle below:
 
 ```{r echo=FALSE}
@@ -165,6 +166,12 @@ plot(my_triangles$paid, lattice = TRUE, main = "Paid Loss Development",
     y = list(at = y_at,
       labels = comma(y_at))
     ))
+
+```
+
+### Incurred Loss Development
+We present incurred loss development experience in the triangle below:
+```{r echo=FALSE}
 
 plot(my_triangles$incurred, lattice = TRUE, main = "Incurred Loss Development",
   xlab = "Matrurity (Years)",
