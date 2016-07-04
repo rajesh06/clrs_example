@@ -4,7 +4,9 @@ author: "SFR Actuarial Consulting, Inc."
 date: "`r Sys.Date()`"
 output:
   rmdformats::readthedown:
-    highlight: kate
+    self_contained: true
+    thumbnails: false
+    lightbox: false
 ---
 
 ```{r setup, include=FALSE}
@@ -144,13 +146,8 @@ htmlTable::htmlTable(summary_df,
 
 
 ## Loss Development
-### Paid Loss Development
-We present incurred loss development experience in the triangle below.  
-
-In our review of the development experience, we noted the follwing:  
-
-- Development patterns have been generally lengthening particulalry at intermediate maturities such as 2:3 and 3:4  
-
+### Paid Loss Development Experience
+We present paid loss development experience in the triangle below.  
 
 ```{r echo=FALSE}
 
@@ -174,7 +171,7 @@ plot(my_triangles$paid, lattice = TRUE, main = "Paid Loss Development",
 
 ```
 
-### Incurred Loss Development
+### Incurred Loss Development Experience
 We present incurred loss development experience in the triangle below:
 ```{r echo=FALSE}
 
@@ -187,3 +184,60 @@ plot(my_triangles$incurred, lattice = TRUE, main = "Incurred Loss Development",
 
 ```
 
+### Obseravtions and Comments
+In our review of the development experience, we noted the follwing:  
+
+- Paid development patterns have been generally lengthening particulalry at intermediate maturities such as 2:3 and 3:4
+- Incurred development experience indicates that a neagtive IBNR is most likely appropriate. More recent accident years have exhibited more favaorable incurred development that older accident years.   
+
+## Ultimate Loss Projections
+We used the `R` package `ChainLadder` to project ultimate losses using the following methods:  
+
+- Mack-Chain-Ladder Model applied to
+
+
+### Mack-Chain-Ladder Model
+
+```{r mcl_paid}
+mcl_paid <- MackChainLadder(Triangle = my_triangles$paid)
+mcl_paid
+plot(mcl_paid)
+
+```
+
+
+```{r mcl_incurred}
+mcl_incurred <- MackChainLadder(Triangle = my_triangles$incurred)
+mcl_incurred
+plot(mcl_incurred)
+
+```
+
+### Bootstrap-Chain-Ladder Model
+```{r bcl_paid}
+bcl_paid <- BootChainLadder(Triangle = my_triangles$paid, R = 999, process.distr = "gamma")
+bcl_paid
+plot(bcl_paid)
+```
+
+```{r bcl_incurred}
+bcl_incurred <- BootChainLadder(Triangle = my_triangles$incurred, R = 999, process.distr = "gamma")
+bcl_incurred
+plot(bcl_incurred)
+```
+
+### Munich-Chain-Ladder Model
+```{r munich}
+munich <- MunichChainLadder(Paid = my_triangles$paid, Incurred = my_triangles$incurred, 
+  est.sigmaP = 0.1, est.sigmaI = 0.1)
+munich
+plot(munich)
+
+```
+
+
+## R packages
+We used the following `R` packagaes to develop this analysis:  
+
+- `r citation()$textVersion` - 
+- `r citation('ChainLadder')$textVersion`
