@@ -11,7 +11,6 @@ output:
 
 ```{r setup, include=FALSE}
 # Sets global chunck options
-
 knitr::opts_chunk$set(echo = TRUE)
 
 proj_info <- list(
@@ -42,7 +41,6 @@ total_row <- function(df, sum_totals, total_label = NULL){
 }
 
 
-
 ```
 
 ## Executive Summary
@@ -67,7 +65,8 @@ Rajesh Sahasrabuddhe, FCAS, MAAA
 (215) 246-1028  
 <rajesh_saharabuddhe@oliverwyman.com>
 
-Brian A. Fannin, ACAS  
+Brian A. Fannin, ACAS 
+
 <BFannin@RedwoodsGroup.com>  
 
 Emma Ran Li  
@@ -82,8 +81,11 @@ We used several R packages to prepare this analysis.
 # load packages
 
 my_packages <- list("dplyr", "magrittr", "lubridate", "htmlTable", "knitr", 
-  "xtable", "ChainLadder", "scales")
+  "xtable", "ChainLadder", "scales", "highcharter")
 sapply(X = my_packages, FUN = library, character.only = TRUE)
+
+
+
 ```
 
 ## Data
@@ -234,6 +236,52 @@ munich
 plot(munich)
 
 ```
+## Comparison of Methods
+
+We now compare estimates by method
+
+
+```{r}
+ultimates <- data_frame(acc_yr = row.names(summary(bcl_incurred)$ByOrigin),
+  bcl_incurred = summary(bcl_incurred)$ByOrigin$'Mean Ultimate',
+  bcl_paid = summary(bcl_paid)$ByOrigin$'Mean Ultimate',
+  mcl_incurred = summary(mcl_incurred)$ByOrigin$'Ultimate',
+  mcl_paid = summary(mcl_paid)$ByOrigin$'Ultimate',
+  munich_incurred = summary(munich)$ByOrigin$'Ult. Incurred',
+  munich_paid = summary(munich)$ByOrigin$'Ult. Paid',
+  incurred = summary(munich)$ByOrigin$'Latest Incurred',
+  paid = summary(munich)$ByOrigin$'Latest Paid')
+
+
+ultimates
+```
+
+```{r, echo=FALSE, message=FALSE}
+hc <- highchart() %>% 
+  hc_title(text = "Estimated Ultimate Claims") %>% 
+  hc_xAxis(categories = ultimates$acc_yr) %>% 
+  hc_plotOptions(column = list(stacking = "normal", zoomType = 'x',
+            panning = TRUE, panKey = 'shift')) %>% 
+  hc_plotOptions(line = list(zoomType = 'x',
+            panning = TRUE, panKey = 'shift')) %>% 
+  hc_add_series(data = ultimates$bcl_incurred - ultimates$paid,
+      name = "Case", type = "column") %>% 
+  hc_add_series(data = ultimates$paid, name = "Paid", type = "column") %>% 
+  hc_add_series(data = ultimates$bcl_incurred, name = "Bootstrap Incurred", type = "line") %>% 
+  hc_add_series(data = ultimates$bcl_paid, name = "Bootstrap Paid", type = "line") %>% 
+  hc_add_series(data = ultimates$munich_incurred, name = "Munich Chain Ladder Incurred", type = "line") %>% 
+  hc_add_series(data = ultimates$munich_paid, name = "Munich Chain Ladder Paid", type = "line") %>% 
+  hc_add_series(data = ultimates$mcl_paid, name = "Mack Chain Ladder Paid", type = "line") %>% 
+   hc_add_series(data = ultimates$mcl_paid, name = "Mack Chain Ladder Paid", type = "line") %>% 
+  hc_tooltip(valueDecimals = 0)
+
+
+hc
+
+```
+
+
+
 
 
 ## R packages
