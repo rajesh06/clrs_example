@@ -81,7 +81,7 @@ We used several R packages to prepare this analysis.
 # load packages
 
 my_packages <- list("dplyr", "magrittr", "lubridate", "htmlTable", "knitr", 
-  "xtable", "ChainLadder", "scales", "highcharter")
+  "xtable", "ChainLadder", "scales", "highcharter", "ggplot2")
 sapply(X = my_packages, FUN = library, character.only = TRUE)
 
 
@@ -120,7 +120,7 @@ model_dat <- auto_dat %>%
 
 
 
-We sumamrize that data in the table below:
+We summarize that data in the table below:
 
 ```{r echo=FALSE}
 summary_df <- model_dat %>% 
@@ -187,15 +187,18 @@ plot(my_triangles$incurred, lattice = TRUE, main = "Incurred Loss Development",
 ```
 
 ### Obseravtions and Comments
-In our review of the development experience, we noted the follwing:  
+In our review of the development experience, we noted the following:  
 
-- Paid development patterns have been generally lengthening particulalry at intermediate maturities such as 2:3 and 3:4
-- Incurred development experience indicates that a neagtive IBNR is most likely appropriate. More recent accident years have exhibited more favaorable incurred development that older accident years.   
+- Paid development patterns have been generally lengthening particularly at intermediate maturities such as 2:3 and 3:4
+- Incurred development experience indicates that a negative IBNR is most likely appropriate. More recent accident years have exhibited more favorable incurred development that older accident years.   
 
 ## Ultimate Loss Projections
 We used the `R` package `ChainLadder` to project ultimate losses using the following methods:  
 
-- Mack-Chain-Ladder Model applied to
+- Mack Chain-Ladder Model applied to paid and incurred losses
+- Bootstrap-Chain-Ladder Model applied to paid and incurred losses
+- The Munich Chain-Ladder Model
+- Traditional incurred and paid loss development Models 
 
 
 ### Mack-Chain-Ladder Model
@@ -217,7 +220,8 @@ plot(mcl_incurred)
 
 ### Bootstrap-Chain-Ladder Model
 ```{r bcl_paid}
-bcl_paid <- BootChainLadder(Triangle = my_triangles$paid, R = 999, process.distr = "gamma")
+bcl_paid <- BootChainLadder(Triangle = my_triangles$paid, R = 999, 
+  process.distr = "gamma")
 bcl_paid
 plot(bcl_paid)
 ```
@@ -236,6 +240,87 @@ munich
 plot(munich)
 
 ```
+
+### Incurred Loss Development Method with Selected Factors
+In the chart below, we first present the observed incremental development factors.
+```{r development_funct, echo=FALSE}
+dev_factor_df <- function(my_triangle) {  
+  # Use 'my_triangle' to avoid confusion with 
+  # 'triangle' in the ChainLadder package
+  # my_triangle <- my_triangles$paid
+  vals <- ncol(my_triangle)
+  dev_tri <- my_triangle[,2:vals] / my_triangle[,1:(vals - 1)] %>% 
+    as.triangle()
+  colnames(dev_tri) <- 1:(vals - 1)
+  # revert back to triangle class so that it conforms to the loss triangle
+  dev_df <- as.data.frame(dev_tri) %>% 
+    dplyr::rename(ildf = value)
+  
+  loss_df <- as.data.frame(my_triangle) %>% 
+    dplyr::rename(beg_loss = value)
+  
+  dev_df <- dplyr::left_join(loss_df, dev_df)
+  dev_df <- dev_df[complete.cases(dev_df),] %>% 
+    tbl_df()
+  
+  gg <- ggplot(data = dev_df, mapping = aes(x = lag, y = ildf)) +
+    geom_point(shape = 21, mapping = aes(size = beg_loss, fill = acc_yr)) +
+    scale_y_continuous(name = "Incremental Loss Development Factor") + 
+    scale_x_continuous(name = "Lag") + 
+    scale_size(name = "Beginning Loss") + 
+    scale_fill_gradient(name = "Accident Year", low = "white", high = "blue") + 
+    theme_bw()
+    
+  sel_ldf_df <- data_frame(lag = unique(dev_df$lag), sel_ldf = NA)
+  
+  return(list(df = dev_df, gg = gg, sel_ldf_df = sel_ldf_df))
+  
+}
+
+
+```
+
+
+```{r, warning=FALSE}
+paid_dev_analysis <- dev_factor_df(my_triangles$paid)
+paid_dev_analysis$gg
+```
+
+We then select the following development factors:
+
+```{r sel_pd_ldfs, echo=TRUE}
+paid_dev_analysis$sel_ldf_df$sel_ldf = c(
+  1.72, 1.18, 1.08, 
+  1.04, 1.02, 1.01,
+  1.00, 1.00, 1.00)
+
+paid_dev_analysis$sel_ldf_df$sel_cldf <- paid_dev_analysis$sel_ldf_df$sel_ldf %>% 
+  rev() %>% 
+  cumprod() %>% 
+  rev()
+
+paid_tail <- 1.02
+
+paid_dev_analysis$sel_ldf_df$sel_cldf <- 
+  paid_dev_analysis$sel_ldf_df$sel_cldf * paid_tail
+
+
+paid_dev_analysis$sel_ldf_df
+
+```
+
+We now add our selected incremental loss development factors (in red) to the chart.
+
+```{r plot_with_sels, echo=FALSE}
+paid_dev_analysis$gg + geom_point(
+  data = paid_dev_analysis$sel_ldf_df,
+  mapping = aes(y = sel_ldf),  
+  shape = 19, color = "red" )
+```
+
+
+
+
 ## Comparison of Methods
 
 We now compare estimates by method
@@ -281,11 +366,31 @@ hc
 ```
 
 
-
-
-
 ## R packages
-We used the following `R` packagaes to develop this analysis:  
+We used the following `R` packages to develop this analysis:  
 
-- `r citation()$textVersion` - 
-- `r citation('ChainLadder')$textVersion`
+* Base R: `r citation()$textVersion`
+
+We used `rmdformats` to produce this report. 
+
+* rmdformats: `r citation('rmdformats')$textVersion`
+
+We used the following packages to prepare the analysis.
+
+```{r, echo=FALSE, results='asis'}
+cite_text <- lapply(X = my_packages, FUN = function(pkg_name) {
+  cite <- citation(pkg_name)
+  unlist(cite$textVersion)
+}
+  ) %>% 
+  unlist()
+
+paste("*  ", cite_text, "\n") %>% 
+  cat()
+```
+
+## Session Information
+```{r, echo=FALSE}
+sessionInfo()
+```
+
